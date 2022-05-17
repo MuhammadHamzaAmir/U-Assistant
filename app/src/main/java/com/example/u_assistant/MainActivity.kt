@@ -3,6 +3,7 @@ package com.example.u_assistant
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.api.gax.core.CredentialsProvider
@@ -27,6 +28,8 @@ class MainActivity : AppCompatActivity() {
         Log.d("before sp","LET see")
 //       //val credentials:CredentialsProvider = CredentialsProvider().credentials
         val button:Button= findViewById(R.id.button)
+        val txv:TextView= findViewById(R.id.textv)
+
 
 //        button.setOnClickListener {
 //            // Code here executes on main thread after user presses button
@@ -67,6 +70,11 @@ class MainActivity : AppCompatActivity() {
         val response: RecognizeResponse = speechClient.recognize(config, audio)
         val results: List<SpeechRecognitionResult> = response.resultsList
 
+        for (result in results){
+            val alternative = result.alternativesList[0]
+            val text = alternative.transcript
+            txv.text = text.toString()
+        }
         Log.d("ok",results.toString())
 
     }
