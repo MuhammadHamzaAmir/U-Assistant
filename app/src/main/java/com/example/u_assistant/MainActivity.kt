@@ -1,217 +1,179 @@
 package com.example.u_assistant
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.MediaPlayer
 import android.media.MediaRecorder
-import android.os.Build
 import android.os.Bundle
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
-import android.view.MotionEvent
-import android.view.View
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
-import androidx.annotation.RequiresApi
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import com.google.api.gax.core.CredentialsProvider
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.google.auth.oauth2.GoogleCredentials
-import com.google.cloud.speech.v1.*
+import com.google.cloud.speech.v1.RecognitionAudio
+import com.google.cloud.speech.v1.RecognitionConfig
+import com.google.cloud.speech.v1.SpeechClient
+import com.google.cloud.speech.v1.SpeechSettings
+import com.google.protobuf.ByteString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
-import java.util.*
 
+
+private const val SPEECH_REQUEST_CODE = 0
+private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
-    private val SPEECH_REQUEST_CODE = 0
-    lateinit var speechClient: SpeechClient
-    private var recorder: MediaRecorder? = null
 
-    //@RequiresApi(Build.VERSION_CODES.S)
+    private lateinit var speechClient: SpeechClient
+    private lateinit var recorder: MediaRecorder
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContent {
+            MaterialTheme() {
+                val scope = rememberCoroutineScope()
+                var currentText by remember { mutableStateOf("") }
+                var isRecording by remember { mutableStateOf(false) }
 
-        val inputStream: InputStream = assets.open("credentials.json")
-        val size: Int = inputStream.available()
-        Toast.makeText(this, size.toString(), Toast.LENGTH_LONG).show()
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        text = currentText,
+                        color = Color.White,
+                        style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
+                    )
+                    Image(
+                        modifier = Modifier
+                            .size(150.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .padding(40.dp)
+                            .clickable {
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        if (isRecording) {
+                                            val string = stopAudio().use {
+                                                ByteString.copyFrom(it.readBytes())
+                                            }
 
-        Log.d("before sp", "LET see")
-//       //val credentials:CredentialsProvider = CredentialsProvider().credentials
-        val button: Button = findViewById(R.id.button)
-        val txv: TextView = findViewById(R.id.textv)
-
-
-//        button.setOnClickListener {
-//            // Code here executes on main thread after user presses button
-//            cl(inputStream)
-//        }
-        speechClient = com.google.cloud.speech.v1.SpeechClient.create(
-            SpeechSettings.newBuilder().setCredentialsProvider(CredentialsProvider {
-                GoogleCredentials.fromStream(inputStream)
-            }).build()
-        )
-
-        //Log.d("SPR",SpeechRecognizer.isOnDeviceRecognitionAvailable(this).toString())
-//        Log.d("SPR2",SpeechRecognizer.isRecognitionAvailable(this).toString())
-
-        val speechRecognizer: SpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        val speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-//        button.setOnClickListener {
-//                recognizeSpeech(txv,speechRecognizer,speechRecognizerIntent)
-//        }
-
-
-        Log.d("RI3IS", SpeechRecognizer.isRecognitionAvailable(this).toString())
-        button.setOnTouchListener { v, event ->
-            if (event != null) {
-                when (event.getAction()) {
-                    MotionEvent.ACTION_UP -> {
-
-                        if (ActivityCompat.checkSelfPermission(
-                                this@MainActivity,
-                                Manifest.permission.RECORD_AUDIO
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) {
-
-                            ActivityCompat.requestPermissions(
-                                this@MainActivity,
-                                arrayOf(Manifest.permission.RECORD_AUDIO),
-                                101
-                            )
-
-                        } else {
-
-
-                            recorder = MediaRecorder().apply {
-                                setAudioSource(MediaRecorder.AudioSource.MIC)
-                                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-                                setAudioChannels(1)
-                                setOutputFile("${cacheDir.absolutePath}/audio.3gp")
-                                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-                                prepare()
-                                start()
-                            }
-                        }
-                    }
-                    MotionEvent.ACTION_DOWN -> {
-                        recorder?.apply {
-                            stop()
-                            release()
-                        }
-                        recorder = null
-                        //                            val inputStream: File = File("${cacheDir.absolutePath}/audio.3gp")
-                        //                            val size= inputStream.length()/1024
-                        //                            Log.d("SIZE",size.toString())
-                    }
+                                            currentText = convertToText(string)
+                                        } else {
+                                            recordAudio()
+                                        }
+                                        isRecording = !isRecording
+                                    }
+                                }
+                            },
+                        painter = painterResource(id = R.drawable.ic_mic),
+                        contentDescription = "Mic",
+                        colorFilter = ColorFilter.tint(Color.Black)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Bolne k liye button daba kr rakhen...",
+                        color = Color.White,
+                    )
+                    Spacer(modifier = Modifier.height(30.dp))
                 }
             }
-
-            false
         }
 
+        speechClient = assets.open("credentials.json").use {
+            SpeechClient.create(
+                SpeechSettings.newBuilder().setCredentialsProvider {
+                    GoogleCredentials.fromStream(it)
+                }.build()
+            )
+        }
 
-//        Log.d("AFTER sp","LET see")
-//
-//        //Toast.makeText(this,speechClient.isShutdown.toString(),Toast.LENGTH_LONG).show()
-//
-//        // The path to the audio file to transcribe
-//        // The path to the audio file to transcribe
-//
-//
-//
-//
-//        val audioFile: InputStream = assets.open("out.wav")
-//        //val file:File = File(gcsUri)
-//
-//        val byteString:ByteString = ByteString.copyFrom(audioFile.readBytes())
-//
-//        // Builds the sync recognize request
-//
-//        // Builds the sync recognize request
-//        val config: RecognitionConfig = RecognitionConfig.newBuilder()
-//            .setEncoding(RecognitionConfig.AudioEncoding.LINEAR16)
-//            .setSampleRateHertz(16000)
-//            .setLanguageCode("ur-PK")
-//            .build()
-//        val audio: RecognitionAudio = RecognitionAudio.newBuilder().setContent(byteString).build()
-//
-//        // Performs speech recognition on the audio file
-//
-//        // Performs speech recognition on the audio file
-//        val response: RecognizeResponse = speechClient.recognize(config, audio)
-//        val results: List<SpeechRecognitionResult> = response.resultsList
-//
-//        for (result in results){
-//            val alternative = result.alternativesList[0]
-//            val text = alternative.transcript
-//            txv.text = text.toString()
-//        }
-//        Log.d("ok",results.toString())
+        Log.d(TAG, SpeechRecognizer.isRecognitionAvailable(this).toString())
+    }
 
+    private fun recordAudio() {
+        recorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.AMR_WB)
+            setAudioSamplingRate(16000)
+            setAudioChannels(1)
+            setOutputFile("${cacheDir.absolutePath}/audio.amr")
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_WB)
+            prepare()
+            start()
+        }
+    }
+
+    private fun stopAudio(): InputStream {
+        recorder.apply {
+            stop()
+            release()
+        }
+
+        return File("${cacheDir.absolutePath}/audio.amr").inputStream()
+    }
+
+    private fun playRecording() {
+        val uri = "${cacheDir.absolutePath}/audio.amr".toUri()
+        val mediaPlayer = MediaPlayer().apply {
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .build()
+            )
+            setDataSource(applicationContext, uri)
+            prepare()
+            start()
+            Log.d(TAG, "playRecording: $uri started")
+        }
+
+        mediaPlayer.setOnCompletionListener {
+            Log.d(TAG, "playRecording: completed")
+            mediaPlayer.release()
+        }
     }
 
 
-// fun cl(inputStream:InputStream){
-//     com.google.cloud.speech.v1.SpeechClient.create(
-//         SpeechSettings.newBuilder().setCredentialsProvider(CredentialsProvider { GoogleCredentials.fromStream(inputStream) }).build()
-//     )
-// }
+    private fun convertToText(byteString: ByteString): String {
+        Log.d(TAG, "convertToText: Sending Request")
+        val config = RecognitionConfig.newBuilder()
+            .setEncoding(RecognitionConfig.AudioEncoding.AMR_WB)
+            .setSampleRateHertz(16000)
+            .setLanguageCode("ur-PK")
+            .build()
 
+        val audio = RecognitionAudio.newBuilder().setContent(byteString).build()
 
-    private fun recognizeSpeech(
-        textView: TextView,
-        mSpeechRecognizer: SpeechRecognizer,
-        mSpeechRecognizerIntent: Intent
-    ) {
+        // Performs speech recognition on the audio file
+        val response = speechClient.recognize(config, audio)
+        val results = response.resultsList
 
-//    val mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-
-        //val mSpeechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-
-        mSpeechRecognizerIntent.putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-        )
-        mSpeechRecognizerIntent.putExtra(
-            RecognizerIntent.EXTRA_PROMPT,
-            "Speak nah"
-        )
-
-
-        mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ur-PK")
-        mSpeechRecognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(bundle: Bundle) {}
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(v: Float) {}
-            override fun onBufferReceived(bytes: ByteArray) {}
-            override fun onEndOfSpeech() {}
-            override fun onError(i: Int) {}
-            override fun onResults(bundle: Bundle) {
-                //getting all the matches
-                val matches = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-
-                //displaying the first match
-                if (matches != null) {
-                    textView.text = matches[0]
-                } else {
-                    textView.text = "no work"
-                }
-            }
-
-            override fun onPartialResults(bundle: Bundle) {}
-            override fun onEvent(i: Int, bundle: Bundle) {}
-        })
-
-
-//    Log.d("RI1",RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE)
-//    Log.d("RI",RecognizerIntent.ACTION_GET_LANGUAGE_DETAILS)
-
-
+        Log.d(TAG, "convertToText: $results")
+        return results.joinToString("\n\n") { it.alternativesList.first().transcript }
     }
 }
