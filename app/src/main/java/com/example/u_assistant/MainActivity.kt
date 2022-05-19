@@ -1,5 +1,6 @@
 package com.example.u_assistant
 
+import android.icu.number.Notation.simple
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -25,29 +26,49 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
+import com.google.api.client.json.JsonParser
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.speech.v1.RecognitionAudio
 import com.google.cloud.speech.v1.RecognitionConfig
 import com.google.cloud.speech.v1.SpeechClient
 import com.google.cloud.speech.v1.SpeechSettings
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.protobuf.ByteString
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.InputStream
+import org.json.JSONObject
+import java.io.*
+import java.net.HttpURLConnection
 
 
-private const val SPEECH_REQUEST_CODE = 0
+private const val SPEECH_REQUEST_CODE = 101
 private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var speechClient: SpeechClient
     private lateinit var recorder: MediaRecorder
+    private val rasaUrl:String = "https://ae86-111-68-97-201.ngrok.io/model/parse"
+    private lateinit var rasaResponse: JsonObject
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO){
+                rasaResponse = sendRequestToRasaServer("call her")
+            }
+        }
+
         setContent {
             MaterialTheme() {
                 val scope = rememberCoroutineScope()
@@ -176,4 +197,27 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "convertToText: $results")
         return results.joinToString("\n\n") { it.alternativesList.first().transcript }
     }
+
+
+    private suspend fun sendRequestToRasaServer(text:String): JsonObject {
+
+        val jsonParam = JSONObject()
+        jsonParam.put("text",text)
+        val client = HttpClient(CIO)
+        val response: HttpResponse = client.request(rasaUrl) {
+            method = HttpMethod.Post
+            contentType(ContentType.Application.Any)
+            setBody(jsonParam.toString())
+        }
+        val strResult :String = response.body()
+        Log.d(TAG,strResult)
+
+
+        val jsonElement:JsonElement = com.google.gson.JsonParser.parseString(strResult)
+
+
+        return jsonElement.asJsonObject
+    }
 }
+
+
