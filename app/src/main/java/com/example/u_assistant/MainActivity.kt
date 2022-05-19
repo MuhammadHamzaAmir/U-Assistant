@@ -1,5 +1,7 @@
 package com.example.u_assistant
 
+
+import android.icu.number.Notation.simple
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
@@ -29,31 +31,57 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+
+import com.google.api.client.json.JsonParser
+
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.speech.v1.RecognitionAudio
 import com.google.cloud.speech.v1.RecognitionConfig
 import com.google.cloud.speech.v1.SpeechClient
 import com.google.cloud.speech.v1.SpeechSettings
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.protobuf.ByteString
+import com.google.protobuf.MapEntry
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.InputStream
+import org.json.JSONObject
+import org.w3c.dom.Entity
+import java.io.*
+import java.net.HttpURLConnection
 
 
-private const val SPEECH_REQUEST_CODE = 0
+private const val SPEECH_REQUEST_CODE = 101
 private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var speechClient: SpeechClient
     private lateinit var recorder: MediaRecorder
+    private val rasaUrl:String = "https://122c-111-68-97-201.ngrok.io/model/parse"
+    private lateinit var rasaResponse: JsonObject
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
             withContext(Dispatchers.IO){
+
+                rasaResponse = sendRequestToRasaServer("  کراچی اور لاہور کا موموسم")
+                getRasaIntent(rasaResponse)
+                val jO = processRasaEntities(rasaResponse)
+                Log.d("$TAG entit",jO.toString())
+            }
+        }
+
                 OpenThirdPartyApp()
             }
         }
@@ -186,6 +214,60 @@ class MainActivity : AppCompatActivity() {
         return results.joinToString("\n\n") { it.alternativesList.first().transcript }
     }
 
+
+
+    private suspend fun sendRequestToRasaServer(text:String): JsonObject {
+
+        val jsonParam = JSONObject()
+        jsonParam.put("text",text)
+        val client = HttpClient(CIO)
+        val response: HttpResponse = client.request(rasaUrl) {
+            method = HttpMethod.Post
+            contentType(ContentType.Application.Any)
+            setBody(jsonParam.toString())
+        }
+        val strResult :String = response.body()
+        Log.d(TAG,strResult)
+
+
+        val jsonElement:JsonElement = com.google.gson.JsonParser.parseString(strResult)
+
+
+        return jsonElement.asJsonObject
+    }
+
+
+    private fun getRasaIntent(rasaJsonObject:JsonObject):String{
+        val rasaIntent:JsonObject= rasaJsonObject.getAsJsonObject("intent")
+        val rasaIntentName:String = rasaIntent.get("name").asString
+        Log.d("$TAG RASAINTENT",rasaIntentName)
+        return rasaIntentName
+    }
+
+    private fun getRasaEntities(rasaJsonObject: JsonObject):JsonArray{
+            return rasaJsonObject.getAsJsonArray("entities")
+    }
+
+    private fun processRasaEntities(rasaJsonObject: JsonObject):JsonArray{
+        val rasaEntitiesJsonArray:JsonArray = getRasaEntities(rasaJsonObject)
+        val allEntities:JsonArray = JsonArray()
+        Log.d("$TAG Entity Data",rasaEntitiesJsonArray.toString())
+        for (entity in rasaEntitiesJsonArray){
+            val currentEntity:JsonObject = JsonObject()
+            val entityType :String= entity.asJsonObject.get("entity").asString
+            val entityValue :String= entity.asJsonObject.get("value").asString
+            currentEntity.addProperty(entityType,entityValue)
+            allEntities.add(currentEntity)
+
+        }
+        Log.d("$TAG All Entities",allEntities.toString())
+        return allEntities
+    }
+
+}
+
+
+
     private fun PhoneCall() {
         val intent = Intent(Intent.ACTION_DIAL)
         startActivity(intent)
@@ -223,3 +305,4 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
     }
+
