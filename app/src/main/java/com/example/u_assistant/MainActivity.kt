@@ -33,9 +33,11 @@ import com.google.cloud.speech.v1.RecognitionAudio
 import com.google.cloud.speech.v1.RecognitionConfig
 import com.google.cloud.speech.v1.SpeechClient
 import com.google.cloud.speech.v1.SpeechSettings
+import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.protobuf.ByteString
+import com.google.protobuf.MapEntry
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -46,6 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import org.w3c.dom.Entity
 import java.io.*
 import java.net.HttpURLConnection
 
@@ -57,7 +60,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var speechClient: SpeechClient
     private lateinit var recorder: MediaRecorder
-    private val rasaUrl:String = "https://ae86-111-68-97-201.ngrok.io/model/parse"
+    private val rasaUrl:String = "https://122c-111-68-97-201.ngrok.io/model/parse"
     private lateinit var rasaResponse: JsonObject
 
 
@@ -65,7 +68,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
             withContext(Dispatchers.IO){
-                rasaResponse = sendRequestToRasaServer("call her")
+                rasaResponse = sendRequestToRasaServer("  کراچی اور لاہور کا موموسم")
+                getRasaIntent(rasaResponse)
+                val jO = processRasaEntities(rasaResponse)
+                Log.d("$TAG entit",jO.toString())
             }
         }
 
@@ -218,6 +224,35 @@ class MainActivity : AppCompatActivity() {
 
         return jsonElement.asJsonObject
     }
+
+
+    private fun getRasaIntent(rasaJsonObject:JsonObject):String{
+        val rasaIntent:JsonObject= rasaJsonObject.getAsJsonObject("intent")
+        val rasaIntentName:String = rasaIntent.get("name").asString
+        Log.d("$TAG RASAINTENT",rasaIntentName)
+        return rasaIntentName
+    }
+
+    private fun getRasaEntities(rasaJsonObject: JsonObject):JsonArray{
+            return rasaJsonObject.getAsJsonArray("entities")
+    }
+
+    private fun processRasaEntities(rasaJsonObject: JsonObject):JsonArray{
+        val rasaEntitiesJsonArray:JsonArray = getRasaEntities(rasaJsonObject)
+        val allEntities:JsonArray = JsonArray()
+        Log.d("$TAG Entity Data",rasaEntitiesJsonArray.toString())
+        for (entity in rasaEntitiesJsonArray){
+            val currentEntity:JsonObject = JsonObject()
+            val entityType :String= entity.asJsonObject.get("entity").asString
+            val entityValue :String= entity.asJsonObject.get("value").asString
+            currentEntity.addProperty(entityType,entityValue)
+            allEntities.add(currentEntity)
+
+        }
+        Log.d("$TAG All Entities",allEntities.toString())
+        return allEntities
+    }
+
 }
 
 
