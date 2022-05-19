@@ -1,5 +1,6 @@
 package com.example.u_assistant
 
+import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -96,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Bolne k liye button daba kr rakhen...",
+                        text = "بٹن دبانے کے بعد بولین...",
                         color = Color.White,
                     )
                     Spacer(modifier = Modifier.height(30.dp))
@@ -176,4 +177,33 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "convertToText: $results")
         return results.joinToString("\n\n") { it.alternativesList.first().transcript }
     }
+
+    private fun PhoneCall() {
+        val intent = Intent(Intent.ACTION_DIAL)
+        startActivity(intent)
+    }
+
+    private fun PhoneCall(name: String) {
+
+    }
+
+    private fun AddContact() {
+
+    }
+
+    private fun AddContact(name: String) {
+
+    }
+
+    private fun RemoveContact() {
+
+    }
+
+    private fun RemoveContact(name: String) {
+
+    }
+    private fun SetAlarm() {
+
+    }
+
 }
