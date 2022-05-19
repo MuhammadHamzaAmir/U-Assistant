@@ -1,9 +1,12 @@
 package com.example.u_assistant
 
+import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Bundle
+import android.provider.AlarmClock
+import android.provider.ContactsContract
 import android.speech.SpeechRecognizer
 import android.util.Log
 import androidx.activity.compose.setContent
@@ -25,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.speech.v1.RecognitionAudio
 import com.google.cloud.speech.v1.RecognitionConfig
@@ -48,6 +52,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO){
+                OpenThirdPartyApp()
+            }
+        }
         setContent {
             MaterialTheme() {
                 val scope = rememberCoroutineScope()
@@ -96,7 +105,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Bolne k liye button daba kr rakhen...",
+                        text = "بٹن دبانے کے بعد بولین...",
                         color = Color.White,
                     )
                     Spacer(modifier = Modifier.height(30.dp))
@@ -176,4 +185,41 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "convertToText: $results")
         return results.joinToString("\n\n") { it.alternativesList.first().transcript }
     }
-}
+
+    private fun PhoneCall() {
+        val intent = Intent(Intent.ACTION_DIAL)
+        startActivity(intent)
+    }
+
+    private fun PhoneCall(name: String) {
+
+    }
+
+    private fun AddContact() {
+        val intent = Intent(ContactsContract.Intents.Insert.ACTION)
+        intent.setType(ContactsContract.RawContacts.CONTENT_TYPE);
+        startActivity(intent)
+    }
+
+    private fun AddContact(name: String) {
+
+    }
+
+    private fun RemoveContact() {
+
+    }
+
+    private fun RemoveContact(name: String) {
+
+    }
+    private fun SetAlarm() {
+        val intent = Intent(AlarmClock.ACTION_SET_ALARM)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        }
+
+    private fun OpenThirdPartyApp(){
+        val intent = packageManager.getLaunchIntentForPackage("com.whatsapp")
+        startActivity(intent)
+    }
+    }
