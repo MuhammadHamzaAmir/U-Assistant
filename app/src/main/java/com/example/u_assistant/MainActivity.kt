@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var speechClient: SpeechClient
     private lateinit var recorder: MediaRecorder
-    private val rasaUrl:String = "https://122c-111-68-97-201.ngrok.io/model/parse"
+    private val rasaUrl:String = "https://febf-111-68-97-201.ngrok.io/model/parse"
     private var rasaResponse: JsonObject = JsonObject()
 
 
