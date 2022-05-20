@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 
@@ -67,24 +68,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var speechClient: SpeechClient
     private lateinit var recorder: MediaRecorder
     private val rasaUrl:String = "https://122c-111-68-97-201.ngrok.io/model/parse"
-    private lateinit var rasaResponse: JsonObject
+    private var rasaResponse: JsonObject = JsonObject()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO){
+//        lifecycleScope.launch {
+//            withContext(Dispatchers.IO){
+//
+//                rasaResponse = sendRequestToRasaServer("  کراچی اور لاہور کا موموسم")
+//                getRasaIntent(rasaResponse)
+//                val jO = processRasaEntities(rasaResponse)
+//                Log.d("$TAG entit",jO.toString())
+//            }
+//        }
 
-                rasaResponse = sendRequestToRasaServer("  کراچی اور لاہور کا موموسم")
-                getRasaIntent(rasaResponse)
-                val jO = processRasaEntities(rasaResponse)
-                Log.d("$TAG entit",jO.toString())
-            }
-        }
-
-                OpenThirdPartyApp()
-            }
-        }
         setContent {
             MaterialTheme() {
                 val scope = rememberCoroutineScope()
@@ -120,12 +118,33 @@ class MainActivity : AppCompatActivity() {
                                             }
 
                                             currentText = convertToText(string)
+                                            rasaResponse = sendRequestToRasaServer(currentText)
+                                            val intent:String=getRasaIntent(rasaResponse)
+                                            if (intent == "make_phone_call"){
+                                                PhoneCall()
+                                            }else{
+                                                Log.d("test $TAG",intent)
+                                            }
                                         } else {
                                             recordAudio()
+
+
                                         }
                                         isRecording = !isRecording
                                     }
+//                                    withContext(Dispatchers.IO) {
+//                                        rasaResponse = sendRequestToRasaServer(currentText)
+//                                        val intent:String=getRasaIntent(rasaResponse)
+//                                        if (intent == "make_phone_call"){
+//                                            PhoneCall()
+//                                        }else{
+//                                            Log.d("test $TAG",intent)
+//                                        }
+//                                        //val jO = processRasaEntities(rasaResponse)
+//                                    }
                                 }
+
+
                             },
                         painter = painterResource(id = R.drawable.ic_mic),
                         contentDescription = "Mic",
@@ -244,7 +263,7 @@ class MainActivity : AppCompatActivity() {
         return rasaIntentName
     }
 
-    private fun getRasaEntities(rasaJsonObject: JsonObject):JsonArray{
+    private  fun getRasaEntities(rasaJsonObject: JsonObject):JsonArray{
             return rasaJsonObject.getAsJsonArray("entities")
     }
 
@@ -264,8 +283,6 @@ class MainActivity : AppCompatActivity() {
         return allEntities
     }
 
-}
-
 
 
     private fun PhoneCall() {
@@ -273,7 +290,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private fun PhoneCall(name: String) {
+    private  fun PhoneCall(name: String) {
 
     }
 
