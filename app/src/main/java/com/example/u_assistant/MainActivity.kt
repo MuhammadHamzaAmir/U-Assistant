@@ -181,9 +181,6 @@ private fun MainScreen(
             Image(
                 modifier = Modifier
                     .size(150.dp)
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .padding(40.dp)
                     .clickable {
                         scope.launch {
                             withContext(Dispatchers.IO) {
@@ -191,13 +188,21 @@ private fun MainScreen(
                                     currentText = onStopRecord()
                                     val model = api.getModel(currentText)
                                     model.intent.handle()(context as Activity)
+
+                                    val translateText = TranslateText()
+                                    translateText.translateText("یو ٹیوب")
+
+
                                 } else {
                                     onStartRecord()
                                 }
                                 isRecording = !isRecording
                             }
                         }
-                    },
+                    }
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .padding(40.dp),
                 painter = painterResource(id = R.drawable.ic_mic),
                 contentDescription = "Mic",
                 colorFilter = ColorFilter.tint(Color.Black)
