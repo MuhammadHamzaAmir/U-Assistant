@@ -1,6 +1,7 @@
 package com.example.u_assistant
 
 
+import android.app.Activity
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -22,8 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.example.u_assistant.models.handle
@@ -51,72 +54,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        lifecycleScope.launch {
-//            withContext(Dispatchers.IO){
-//
-//                rasaResponse = sendRequestToRasaServer("  کراچی اور لاہور کا موموسم")
-//                getRasaIntent(rasaResponse)
-//                val jO = processRasaEntities(rasaResponse)
-//                Log.d("$TAG entit",jO.toString())
-//            }
-//        }
 
         setContent {
-            MaterialTheme() {
-                val scope = rememberCoroutineScope()
-                var currentText by remember { mutableStateOf("") }
-                var isRecording by remember { mutableStateOf(false) }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        text = currentText,
-                        color = Color.White,
-                        style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
-                    )
-                    Image(
-                        modifier = Modifier
-                            .size(150.dp)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                            .padding(40.dp)
-                            .clickable {
-                                scope.launch {
-                                    withContext(Dispatchers.IO) {
-                                        if (isRecording) {
-                                            val string = stopAudio().use {
-                                                ByteString.copyFrom(it.readBytes())
-                                            }
-
-                                            currentText = convertToText(string)
-                                            val model = api.getModel(currentText)
-                                            model.intent.handle()(this@MainActivity)
-                                        } else {
-                                            recordAudio()
-                                        }
-                                        isRecording = !isRecording
-                                    }
-                                }
-                            },
-                        painter = painterResource(id = R.drawable.ic_mic),
-                        contentDescription = "Mic",
-                        colorFilter = ColorFilter.tint(Color.Black)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "بٹن دبانے کے بعد بولین...",
-                        color = Color.White,
-                    )
-                    Spacer(modifier = Modifier.height(30.dp))
+            MainScreen(
+                onStartRecord = this::recordAudio,
+                onStopRecord = {
+                    stopAudio().use {
+                        ByteString.copyFrom(it.readBytes())
+                    }.let { convertToText(it) }
                 }
-            }
+            )
         }
 
         speechClient = assets.open("credentials.json").use {
@@ -129,6 +76,7 @@ class MainActivity : AppCompatActivity() {
 
         Log.d(TAG, SpeechRecognizer.isRecognitionAvailable(this).toString())
     }
+
 
     private fun recordAudio() {
         recorder = MediaRecorder().apply {
@@ -194,3 +142,69 @@ class MainActivity : AppCompatActivity() {
 
 }
 
+@Preview(showBackground = true, heightDp = 640, widthDp = 360)
+@Composable
+private fun MainScreenPreview() {
+    MainScreen(onStartRecord = {}, onStopRecord = { "" })
+}
+
+@Composable
+private fun MainScreen(
+    onStartRecord: suspend () -> Unit,
+    onStopRecord: suspend () -> String
+) {
+    MaterialTheme() {
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+        val api = remember { Api() }
+        var currentText by remember { mutableStateOf("") }
+        var isRecording by remember { mutableStateOf(false) }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.Black)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                text = currentText,
+                color = Color.White,
+                style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
+            )
+            Image(
+                modifier = Modifier
+                    .size(150.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .padding(40.dp)
+                    .clickable {
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                if (isRecording) {
+                                    currentText = onStopRecord()
+                                    val model = api.getModel(currentText)
+                                    model.intent.handle()(context as Activity)
+                                } else {
+                                    onStartRecord()
+                                }
+                                isRecording = !isRecording
+                            }
+                        }
+                    },
+                painter = painterResource(id = R.drawable.ic_mic),
+                contentDescription = "Mic",
+                colorFilter = ColorFilter.tint(Color.Black)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "بٹن دبانے کے بعد بولین...",
+                color = Color.White,
+            )
+            Spacer(modifier = Modifier.height(30.dp))
+        }
+    }
+}
