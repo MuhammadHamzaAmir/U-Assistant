@@ -6,15 +6,16 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Bundle
-import android.speech.SpeechRecognizer
 import android.util.Log
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -29,12 +30,12 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
+import com.example.u_assistant.models.Resource
+import com.example.u_assistant.models.getOrThrow
 import com.example.u_assistant.models.handle
-import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.speech.v1.RecognitionAudio
 import com.google.cloud.speech.v1.RecognitionConfig
-import com.google.cloud.speech.v1.SpeechClient
-import com.google.cloud.speech.v1.SpeechSettings
 import com.google.protobuf.ByteString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -48,33 +49,35 @@ private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var speechClient: SpeechClient
     private lateinit var recorder: MediaRecorder
-    private val api = Api()
+
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            MainScreen(
-                onStartRecord = this::recordAudio,
-                onStopRecord = {
-                    stopAudio().use {
-                        ByteString.copyFrom(it.readBytes())
-                    }.let { convertToText(it) }
+            val client = viewModel.speechClient.collectAsState()
+
+            if (client.value is Resource.Loading) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
-            )
+            } else {
+                MainScreen(
+                    onStartRecord = this::recordAudio,
+                    onStopRecord = {
+                        stopAudio().use {
+                            ByteString.copyFrom(it.readBytes())
+                        }.let { convertToText(it) }
+                    }
+                )
+            }
         }
 
-        speechClient = assets.open("credentials.json").use {
-            SpeechClient.create(
-                SpeechSettings.newBuilder().setCredentialsProvider {
-                    GoogleCredentials.fromStream(it)
-                }.build()
-            )
-        }
-
-        Log.d(TAG, SpeechRecognizer.isRecognitionAvailable(this).toString())
+        lifecycleScope.launch { viewModel.init(this@MainActivity) }
     }
 
 
@@ -133,7 +136,7 @@ class MainActivity : AppCompatActivity() {
         val audio = RecognitionAudio.newBuilder().setContent(byteString).build()
 
         // Performs speech recognition on the audio file
-        val response = speechClient.recognize(config, audio)
+        val response = viewModel.speechClient.value.getOrThrow().recognize(config, audio)
         val results = response.resultsList
 
         Log.d(TAG, "convertToText: $results")
