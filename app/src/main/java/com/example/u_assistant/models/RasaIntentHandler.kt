@@ -32,7 +32,15 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
+            with(activity) {
+                val intent = Intent(ContactsContract.Intents.Insert.ACTION)
+                intent.type = ContactsContract.RawContacts.CONTENT_TYPE;
+                if(args.size > 1){
+                    intent.putExtra(ContactsContract.Intents.Insert.NAME,args.first().value)
+                }
 
+                startActivity(intent)
+            }
         }
     }
 
@@ -86,13 +94,13 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                 "لینکد ان" to "LinkedIn",
                 "لینکڈان" to "LinkedIn",
                 "میپس" to "Maps",
-                )
-            if (args.isEmpty()) {invoke(activity)}
-            else{
+            )
+            if (args.isEmpty()) {
+                invoke(activity)
+            } else {
                 if (args.first().value in apps) {
                     apps[args.first().value]?.let { this(activity, it) }
-                }
-                else{
+                } else {
                     invoke(activity)
                 }
             }
