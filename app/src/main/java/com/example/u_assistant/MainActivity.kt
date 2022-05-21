@@ -188,11 +188,6 @@ private fun MainScreen(
                                     currentText = onStopRecord()
                                     val model = api.getModel(currentText)
                                     model.intent.handle()(context as Activity)
-
-                                    val translateText = TranslateText()
-                                    translateText.translateText("یو ٹیوب")
-
-
                                 } else {
                                     onStartRecord()
                                 }
