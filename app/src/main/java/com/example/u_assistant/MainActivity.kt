@@ -193,8 +193,6 @@ private fun MainScreen(
                     modifier = Modifier
                         .size(150.dp)
                         .clip(CircleShape)
-                        .background(Color.White)
-                        .padding(40.dp)
                         .clickable {
                             scope.launch {
                                 withContext(Dispatchers.IO) {
@@ -208,7 +206,9 @@ private fun MainScreen(
                                     isRecording = !isRecording
                                 }
                             }
-                        },
+                        }
+                        .background(Color.White)
+                        .padding(40.dp),
                     painter = painterResource(id = R.drawable.ic_mic),
                     contentDescription = "Mic",
                     colorFilter = ColorFilter.tint(Color.Black)
