@@ -2,8 +2,11 @@ package com.example.u_assistant.models
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.provider.AlarmClock
 import android.provider.ContactsContract
+import android.widget.Toast
+import java.util.*
 
 sealed class RasaIntentHandler(val intent: RasaIntent) {
     class PhoneCall(intent: RasaIntent) : RasaIntentHandler(intent) {
@@ -54,11 +57,31 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
 
     class OpenApp(intent: RasaIntent) : RasaIntentHandler(intent) {
         override fun invoke(activity: Activity) {
-
+            try {
+                activity.startActivity(
+                    activity.packageManager.getLaunchIntentForPackage(
+                        getPackage(
+                            activity,
+                            "WhatsApp"
+                        )
+                    )
+                )
+            } catch (e: Exception) {
+                Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
+            }
         }
 
         override fun invoke(activity: Activity, args: List<String>) {
 
+        }
+
+        private fun getPackage(activity: Activity, name: String): String {
+            return activity.packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+                .associate {
+                    it.loadLabel(activity.packageManager).toString()
+                        .lowercase(Locale.ENGLISH) to it.packageName
+                }[name.lowercase(Locale.ENGLISH)]
+                ?: throw IllegalArgumentException("No package found for $name")
         }
     }
 

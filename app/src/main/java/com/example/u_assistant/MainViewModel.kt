@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
+private const val TAG = "MainViewModel"
+
 class MainViewModel : ViewModel() {
 
     private val _speechClient = MutableStateFlow<Resource<SpeechClient>>(Resource.Loading)
