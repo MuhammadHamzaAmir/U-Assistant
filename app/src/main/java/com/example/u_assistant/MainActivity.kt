@@ -55,7 +55,7 @@ private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var recorder: MediaRecorder
+    private var recorder: MediaRecorder? = null
 
     private val viewModel: MainViewModel by viewModels()
 
@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopAudio(): InputStream {
-        recorder.apply {
+        recorder?.apply {
             stop()
             release()
         }
@@ -292,51 +292,4 @@ private fun PermissionText(
         color = Color.White,
         textAlign = TextAlign.Center
     )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = Color.Black)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                text = currentText,
-                color = Color.White,
-                style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
-            )
-            Image(
-                modifier = Modifier
-                    .size(150.dp)
-                    .clickable {
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                if (isRecording) {
-                                    currentText = onStopRecord()
-                                    val model = api.getModel(currentText)
-                                    model.intent.handle()(context as Activity, model.entities)
-                                } else {
-                                    onStartRecord()
-                                }
-                                isRecording = !isRecording
-                            }
-                        }
-                    }
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .padding(40.dp),
-                painter = painterResource(id = R.drawable.ic_mic),
-                contentDescription = "Mic",
-                colorFilter = ColorFilter.tint(Color.Black)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "بٹن دبانے کے بعد بولین...",
-                color = Color.White,
-            )
-            Spacer(modifier = Modifier.height(30.dp))
-        }
-    }
 }
