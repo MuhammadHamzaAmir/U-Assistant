@@ -17,7 +17,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
-        override fun invoke(activity: Activity, args: List<String>) {
+        override fun invoke(activity: Activity, args: List<RasaEntity>) {
             if (args.isEmpty()) invoke(activity)
         }
     }
@@ -31,7 +31,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
-        override fun invoke(activity: Activity, args: List<String>) {
+        override fun invoke(activity: Activity, args: List<RasaEntity>) {
 
         }
     }
@@ -40,7 +40,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         override fun invoke(activity: Activity) {
         }
 
-        override fun invoke(activity: Activity, args: List<String>) {
+        override fun invoke(activity: Activity, args: List<RasaEntity>) {
 
         }
     }
@@ -61,7 +61,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
-        override fun invoke(activity: Activity, args: List<String>) {
+        override fun invoke(activity: Activity, args: List<RasaEntity>) {
         }
         private fun getPackage(activity: Activity, name: String): String {
             return activity.packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
@@ -89,7 +89,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
-        override fun invoke(activity: Activity, args: List<String>) {
+        override fun invoke(activity: Activity, args: List<RasaEntity>) {
 
         }
 
@@ -112,13 +112,13 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
-        override fun invoke(activity: Activity, args: List<String>) {
+        override fun invoke(activity: Activity, args: List<RasaEntity>) {
 
         }
     }
 
     abstract operator fun invoke(activity: Activity)
-    abstract operator fun invoke(activity: Activity, args: List<String>)
+    abstract operator fun invoke(activity: Activity, args: List<RasaEntity>)
 }
 
 fun RasaIntent.handle() = when (name) {
