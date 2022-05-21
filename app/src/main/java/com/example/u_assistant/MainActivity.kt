@@ -187,7 +187,7 @@ private fun MainScreen(
                                 if (isRecording) {
                                     currentText = onStopRecord()
                                     val model = api.getModel(currentText)
-                                    model.intent.handle()(context as Activity)
+                                    model.intent.handle()(context as Activity, model.entities)
                                 } else {
                                     onStartRecord()
                                 }
