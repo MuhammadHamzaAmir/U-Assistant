@@ -1,6 +1,5 @@
 package com.example.u_assistant
 
-
 import android.app.Activity
 import android.media.AudioAttributes
 import android.media.MediaPlayer
@@ -48,7 +47,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
-
 
 private const val SPEECH_REQUEST_CODE = 101
 private const val TAG = "MainActivity"
@@ -232,6 +230,7 @@ private fun MainScreen(
                         text = "بٹن دبانے کے بعد بولین",
                         color = Color.White,
                         textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
                     )
                     Spacer(modifier = Modifier.height(30.dp))
                 }
