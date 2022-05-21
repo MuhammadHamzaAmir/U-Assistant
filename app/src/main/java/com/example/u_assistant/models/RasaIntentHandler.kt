@@ -57,7 +57,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
 
     class OpenApp(intent: RasaIntent) : RasaIntentHandler(intent) {
         override fun invoke(activity: Activity) {
-            this(activity, "Whatsapp")
+            this(activity, "Google")
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
