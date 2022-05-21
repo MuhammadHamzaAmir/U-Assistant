@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -54,7 +55,7 @@ private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var recorder: MediaRecorder
+    private var recorder: MediaRecorder? = null
 
     private val viewModel: MainViewModel by viewModels()
 
@@ -100,11 +101,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopAudio(): InputStream {
-        recorder.apply {
+        recorder?.apply {
             stop()
             release()
         }
 
+        recorder = null
         return File("${cacheDir.absolutePath}/audio.amr").inputStream()
     }
 
@@ -172,54 +174,75 @@ private fun MainScreen(
 
         var currentText by remember { mutableStateOf("") }
         var isRecording by remember { mutableStateOf(false) }
+        var isLoading by remember { mutableStateOf(false) }
+
+        val microphoneBgColor by animateColorAsState(targetValue = if (isRecording) Color.Red else Color.White)
+        val microphoneColor by animateColorAsState(targetValue = if (isRecording) Color.White else Color.Black)
 
         if (microphonePermission.hasPermission) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = Color.Black)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    text = currentText,
-                    color = Color.White,
-                    style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
-                )
-                Image(
-                    modifier = Modifier
-                        .size(150.dp)
-                        .clip(CircleShape)
-                        .clickable {
-                            scope.launch {
-                                withContext(Dispatchers.IO) {
-                                    if (isRecording) {
-                                        currentText = onStopRecord()
-                                        val model = api.getModel(currentText)
-                                        model.intent.handle()(context as Activity)
-                                    } else {
-                                        onStartRecord()
+                        .fillMaxSize()
+                        .background(color = Color.Black)
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        text = currentText,
+                        color = Color.White,
+                        style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
+                    )
+                    Image(
+                        modifier = Modifier
+                            .size(150.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        isRecording = !isRecording
+                                        if (!isRecording) {
+                                            isLoading = true
+                                            currentText = onStopRecord()
+                                            try {
+                                                val model = api.getModel(currentText)
+                                                model.intent.handle()(context as Activity)
+                                            } catch (e: Exception) {
+                                                Log.e(TAG, "MainScreen: ", e)
+                                            }
+                                            isLoading = false
+                                        } else {
+                                            onStartRecord()
+                                        }
                                     }
-                                    isRecording = !isRecording
                                 }
                             }
-                        }
-                        .background(Color.White)
-                        .padding(40.dp),
-                    painter = painterResource(id = R.drawable.ic_mic),
-                    contentDescription = "Mic",
-                    colorFilter = ColorFilter.tint(Color.Black)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "بٹن دبانے کے بعد بولین...",
-                    color = Color.White,
-                )
-                Spacer(modifier = Modifier.height(30.dp))
+                            .background(color = microphoneBgColor)
+                            .padding(40.dp),
+                        painter = painterResource(id = R.drawable.ic_mic),
+                        contentDescription = "Mic",
+                        colorFilter = ColorFilter.tint(microphoneColor)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = "بٹن دبانے کے بعد بولین...",
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(30.dp))
+                }
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
+
         } else {
             Box(modifier = Modifier
                 .fillMaxSize()
