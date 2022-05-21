@@ -17,7 +17,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
-        override fun invoke(activity: Activity, args: List<RasaEntity>) {
+        override fun invoke(activity: Activity, args: List<String>) {
             if (args.isEmpty()) invoke(activity)
         }
     }
@@ -31,7 +31,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
-        override fun invoke(activity: Activity, args: List<RasaEntity>) {
+        override fun invoke(activity: Activity, args: List<String>) {
 
         }
     }
@@ -40,78 +40,57 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         override fun invoke(activity: Activity) {
         }
 
-        override fun invoke(activity: Activity, args: List<RasaEntity>) {
+        override fun invoke(activity: Activity, args: List<String>) {
 
         }
     }
 
     class ShowWeather(intent: RasaIntent) : RasaIntentHandler(intent) {
         override fun invoke(activity: Activity) {
-
-        }
-
-        override fun invoke(activity: Activity, args: List<RasaEntity>) {
-
-        }
-    }
-
-    class OpenApp(intent: RasaIntent) : RasaIntentHandler(intent) {
-        override fun invoke(activity: Activity) {
-            this(activity, "Whatsapp")
-        }
-
-        override fun invoke(activity: Activity, args: List<RasaEntity>) {
-            val apps = mapOf(
-                "یوٹیوب" to "YouTube",
-                "اوبر" to "uber",
-                "کروم" to "Chrome",
-                "پلےاسٹور" to "Play Store",
-                "پلے اسٹور" to "Play Store",
-                "موسیقی" to "Music",
-                "میوسک" to "Music",
-                "میوزک" to "Music",
-                "میوسق" to "Music",
-                "میوزق" to "Music",
-                "انسٹاگرام" to "Instagram",
-                "فیسبک" to "Facebook",
-                "فیس بک" to "Facebook",
-                "واٹسایپ" to "WhatsApp",
-                "فوڈپانڈا" to "FoodPanda",
-                "چیتے" to "Cheetay",
-                "ایظی پیسہ" to "EasyPaisa",
-                "ٹک ٹاک" to "TikTok",
-                "اسنیپ چیٹ" to "SnapChat",
-                "اسنیپچیٹ" to "SnapChat",
-                "گوگل" to "Google",
-                "لینکد ان" to "LinkedIn",
-                "لینکڈان" to "LinkedIn",
-                "میپس" to "Maps",
-                )
-            if (args.isEmpty()) {invoke(activity)}
-            else{
-                if (args.first().value in apps) {
-                    apps[args.first().value]?.let { this(activity, it) }
-                }
-                else{
-                    invoke(activity)
-                }
-            }
-
-        }
-
-        private operator fun invoke(activity: Activity, name: String) {
             try {
                 activity.startActivity(
                     activity.packageManager.getLaunchIntentForPackage(
                         getPackage(
                             activity,
-                            name
+                            "Weather"
                         )
                     )
                 )
             } catch (e: Exception) {
                 Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
             }
+        }
+
+        override fun invoke(activity: Activity, args: List<String>) {
+        }
+        private fun getPackage(activity: Activity, name: String): String {
+            return activity.packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+                .associate {
+                    it.loadLabel(activity.packageManager).toString()
+                        .lowercase(Locale.ENGLISH) to it.packageName
+                }[name.lowercase(Locale.ENGLISH)]
+                ?: throw IllegalArgumentException("No package found for $name")
+        }
+    }
+
+    class OpenApp(intent: RasaIntent) : RasaIntentHandler(intent) {
+        override fun invoke(activity: Activity) {
+            try {
+                activity.startActivity(
+                    activity.packageManager.getLaunchIntentForPackage(
+                        getPackage(
+                            activity,
+                            "WhatsApp"
+                        )
+                    )
+                )
+            } catch (e: Exception) {
+                Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        override fun invoke(activity: Activity, args: List<String>) {
+
         }
 
         private fun getPackage(activity: Activity, name: String): String {
@@ -133,13 +112,13 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
-        override fun invoke(activity: Activity, args: List<RasaEntity>) {
+        override fun invoke(activity: Activity, args: List<String>) {
 
         }
     }
 
     abstract operator fun invoke(activity: Activity)
-    abstract operator fun invoke(activity: Activity, args: List<RasaEntity>)
+    abstract operator fun invoke(activity: Activity, args: List<String>)
 }
 
 fun RasaIntent.handle() = when (name) {
