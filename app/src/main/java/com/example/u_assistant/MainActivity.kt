@@ -204,8 +204,9 @@ private fun MainScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "بٹن دبانے کے بعد بولین...",
+                text = "بٹن دبانے کے بعد بولین",
                 color = Color.White,
+                style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
             )
             Spacer(modifier = Modifier.height(30.dp))
         }
