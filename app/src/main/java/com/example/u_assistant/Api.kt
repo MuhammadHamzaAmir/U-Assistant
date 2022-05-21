@@ -1,6 +1,5 @@
 package com.example.u_assistant
 
-import android.util.Log
 import com.example.u_assistant.models.RasaModel
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -12,7 +11,6 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 private const val RASA_URL: String = "https://ca07-111-68-97-200.ngrok.io/model/parse"
-private const val TAG = "Api"
 
 class Api {
 
@@ -27,7 +25,6 @@ class Api {
     }
 
     suspend fun getModel(text: String): RasaModel {
-        Log.d(TAG,text)
         return ktor.post(RASA_URL) { setBody(json.encodeToString(RasaRequest(text))) }.body()
     }
 
