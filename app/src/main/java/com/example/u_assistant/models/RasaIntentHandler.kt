@@ -35,8 +35,15 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             with(activity) {
                 val intent = Intent(ContactsContract.Intents.Insert.ACTION)
                 intent.type = ContactsContract.RawContacts.CONTENT_TYPE;
-                if(args.size > 1){
+                var name = ""
+                if(args.size == 1){
                     intent.putExtra(ContactsContract.Intents.Insert.NAME,args.first().value)
+                }else{
+                    for (value in args){
+                        name = name +" "+ value.value
+                    }
+                    intent.putExtra(ContactsContract.Intents.Insert.NAME,name)
+
                 }
 
                 startActivity(intent)
