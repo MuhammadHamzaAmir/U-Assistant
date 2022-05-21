@@ -10,11 +10,13 @@ import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -26,6 +28,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,6 +38,8 @@ import androidx.lifecycle.lifecycleScope
 import com.example.u_assistant.models.Resource
 import com.example.u_assistant.models.getOrThrow
 import com.example.u_assistant.models.handle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.cloud.speech.v1.RecognitionAudio
 import com.google.cloud.speech.v1.RecognitionConfig
 import com.google.protobuf.ByteString
@@ -100,6 +106,7 @@ class MainActivity : AppCompatActivity() {
             release()
         }
 
+        recorder = null
         return File("${cacheDir.absolutePath}/audio.amr").inputStream()
     }
 
@@ -151,6 +158,7 @@ private fun MainScreenPreview() {
     MainScreen(onStartRecord = {}, onStopRecord = { "" })
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun MainScreen(
     onStartRecord: suspend () -> Unit,
@@ -160,9 +168,130 @@ private fun MainScreen(
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val api = remember { Api() }
+        val microphonePermission = rememberPermissionState(
+            permission = android.Manifest.permission.RECORD_AUDIO
+        )
+
         var currentText by remember { mutableStateOf("") }
         var isRecording by remember { mutableStateOf(false) }
+        var isLoading by remember { mutableStateOf(false) }
 
+        val microphoneBgColor by animateColorAsState(targetValue = if (isRecording) Color.Red else Color.White)
+        val microphoneColor by animateColorAsState(targetValue = if (isRecording) Color.White else Color.Black)
+
+        if (microphonePermission.hasPermission) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = Color.Black)
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        text = currentText,
+                        color = Color.White,
+                        style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
+                    )
+                    Image(
+                        modifier = Modifier
+                            .size(150.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        isRecording = !isRecording
+                                        if (!isRecording) {
+                                            isLoading = true
+                                            currentText = onStopRecord()
+                                            try {
+                                                val model = api.getModel(currentText)
+                                                model.intent.handle()(context as Activity)
+                                            } catch (e: Exception) {
+                                                Log.e(TAG, "MainScreen: ", e)
+                                            }
+                                            isLoading = false
+                                        } else {
+                                            onStartRecord()
+                                        }
+                                    }
+                                }
+                            }
+                            .background(color = microphoneBgColor)
+                            .padding(40.dp),
+                        painter = painterResource(id = R.drawable.ic_mic),
+                        contentDescription = "Mic",
+                        colorFilter = ColorFilter.tint(microphoneColor)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = "بٹن دبانے کے بعد بولین...",
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(30.dp))
+                }
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+
+        } else {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.Black)
+                .padding(16.dp)) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (microphonePermission.shouldShowRationale) {
+                        // If the user has denied the permission but the rationale can be shown,
+                        // then gently explain why the app requires this permission
+                        PermissionText(text = "The microphone is important for this app. Please grant the permission.")
+                    } else {
+                        // If it's the first time the user lands on this feature, or the user
+                        // doesn't want to be asked again for this permission, explain that the
+                        // permission is required
+                        PermissionText(text = "Microphone permission required for this feature to be available.")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        PermissionText(
+                            text = "Please grant the permission",
+                            style = MaterialTheme.typography.subtitle1
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { microphonePermission.launchPermissionRequest() }) {
+                        Text("Request permission")
+                    }
+                }
+            }
+        }
+
+    }
+}
+
+@Composable
+private fun PermissionText(
+    modifier: Modifier = Modifier,
+    text: String,
+    style: TextStyle = MaterialTheme.typography.h6
+) {
+    Text(
+        modifier = modifier.fillMaxWidth(),
+        text = text,
+        style = style,
+        color = Color.White,
+        textAlign = TextAlign.Center
+    )
         Column(
             modifier = Modifier
                 .fillMaxSize()
