@@ -229,7 +229,7 @@ private fun MainScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         modifier = Modifier.fillMaxWidth(),
-                        text = "بٹن دبانے کے بعد بولین...",
+                        text = "بٹن دبانے کے بعد بولین",
                         color = Color.White,
                         textAlign = TextAlign.Center,
                     )
