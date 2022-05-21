@@ -1,14 +1,10 @@
 package com.example.u_assistant
 
 
-import android.icu.number.Notation.simple
-import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Bundle
-import android.provider.AlarmClock
-import android.provider.ContactsContract
 import android.speech.SpeechRecognizer
 import android.util.Log
 import androidx.activity.compose.setContent
@@ -29,35 +25,19 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.startActivity
 import androidx.core.net.toUri
-import androidx.lifecycle.lifecycleScope
-
-import com.google.api.client.json.JsonParser
-
+import com.example.u_assistant.models.handle
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.speech.v1.RecognitionAudio
 import com.google.cloud.speech.v1.RecognitionConfig
 import com.google.cloud.speech.v1.SpeechClient
 import com.google.cloud.speech.v1.SpeechSettings
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.google.protobuf.ByteString
-import com.google.protobuf.MapEntry
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import org.w3c.dom.Entity
-import java.io.*
-import java.net.HttpURLConnection
+import java.io.File
+import java.io.InputStream
 
 
 private const val SPEECH_REQUEST_CODE = 101
@@ -67,9 +47,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var speechClient: SpeechClient
     private lateinit var recorder: MediaRecorder
-    private val rasaUrl:String = "https://febf-111-68-97-201.ngrok.io/model/parse"
-    private var rasaResponse: JsonObject = JsonObject()
-
+    private val api = Api()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,33 +96,14 @@ class MainActivity : AppCompatActivity() {
                                             }
 
                                             currentText = convertToText(string)
-                                            rasaResponse = sendRequestToRasaServer(currentText)
-                                            val intent:String=getRasaIntent(rasaResponse)
-                                            if (intent == "make_phone_call"){
-                                                PhoneCall()
-                                            }else{
-                                                Log.d("test $TAG",intent)
-                                            }
+                                            val model = api.getModel(currentText)
+                                            model.intent.handle()(this@MainActivity)
                                         } else {
                                             recordAudio()
-
-
                                         }
                                         isRecording = !isRecording
                                     }
-//                                    withContext(Dispatchers.IO) {
-//                                        rasaResponse = sendRequestToRasaServer(currentText)
-//                                        val intent:String=getRasaIntent(rasaResponse)
-//                                        if (intent == "make_phone_call"){
-//                                            PhoneCall()
-//                                        }else{
-//                                            Log.d("test $TAG",intent)
-//                                        }
-//                                        //val jO = processRasaEntities(rasaResponse)
-//                                    }
                                 }
-
-
                             },
                         painter = painterResource(id = R.drawable.ic_mic),
                         contentDescription = "Mic",
@@ -233,93 +192,5 @@ class MainActivity : AppCompatActivity() {
         return results.joinToString("\n\n") { it.alternativesList.first().transcript }
     }
 
-
-
-    private suspend fun sendRequestToRasaServer(text:String): JsonObject {
-
-        val jsonParam = JSONObject()
-        jsonParam.put("text",text)
-        val client = HttpClient(CIO)
-        val response: HttpResponse = client.request(rasaUrl) {
-            method = HttpMethod.Post
-            contentType(ContentType.Application.Any)
-            setBody(jsonParam.toString())
-        }
-        val strResult :String = response.body()
-        Log.d(TAG,strResult)
-
-
-        val jsonElement:JsonElement = com.google.gson.JsonParser.parseString(strResult)
-
-
-        return jsonElement.asJsonObject
-    }
-
-
-    private fun getRasaIntent(rasaJsonObject:JsonObject):String{
-        val rasaIntent:JsonObject= rasaJsonObject.getAsJsonObject("intent")
-        val rasaIntentName:String = rasaIntent.get("name").asString
-        Log.d("$TAG RASAINTENT",rasaIntentName)
-        return rasaIntentName
-    }
-
-    private  fun getRasaEntities(rasaJsonObject: JsonObject):JsonArray{
-            return rasaJsonObject.getAsJsonArray("entities")
-    }
-
-    private fun processRasaEntities(rasaJsonObject: JsonObject):JsonArray{
-        val rasaEntitiesJsonArray:JsonArray = getRasaEntities(rasaJsonObject)
-        val allEntities:JsonArray = JsonArray()
-        Log.d("$TAG Entity Data",rasaEntitiesJsonArray.toString())
-        for (entity in rasaEntitiesJsonArray){
-            val currentEntity:JsonObject = JsonObject()
-            val entityType :String= entity.asJsonObject.get("entity").asString
-            val entityValue :String= entity.asJsonObject.get("value").asString
-            currentEntity.addProperty(entityType,entityValue)
-            allEntities.add(currentEntity)
-
-        }
-        Log.d("$TAG All Entities",allEntities.toString())
-        return allEntities
-    }
-
-
-
-    private fun PhoneCall() {
-        val intent = Intent(Intent.ACTION_DIAL)
-        startActivity(intent)
-    }
-
-    private  fun PhoneCall(name: String) {
-
-    }
-
-    private fun AddContact() {
-        val intent = Intent(ContactsContract.Intents.Insert.ACTION)
-        intent.setType(ContactsContract.RawContacts.CONTENT_TYPE);
-        startActivity(intent)
-    }
-
-    private fun AddContact(name: String) {
-
-    }
-
-    private fun RemoveContact() {
-
-    }
-
-    private fun RemoveContact(name: String) {
-
-    }
-    private fun SetAlarm() {
-        val intent = Intent(AlarmClock.ACTION_SET_ALARM)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
-        }
-
-    private fun OpenThirdPartyApp(){
-        val intent = packageManager.getLaunchIntentForPackage("com.whatsapp")
-        startActivity(intent)
-    }
-    }
+}
 

@@ -21,6 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UAssistant"
         android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true"
         >
         <activity
             android:name=".MainActivity"
