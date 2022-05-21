@@ -209,7 +209,7 @@ private fun MainScreen(
                                             currentText = onStopRecord()
                                             try {
                                                 val model = api.getModel(currentText)
-                                                model.intent.handle()(context as Activity)
+                                                model.intent.handle()(context as Activity,model.entities)
                                             } catch (e: Exception) {
                                                 Log.e(TAG, "MainScreen: ", e)
                                             }
