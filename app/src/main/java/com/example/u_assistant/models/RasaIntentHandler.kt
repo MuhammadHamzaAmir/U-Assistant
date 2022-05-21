@@ -47,11 +47,29 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
 
     class ShowWeather(intent: RasaIntent) : RasaIntentHandler(intent) {
         override fun invoke(activity: Activity) {
-
+            try {
+                activity.startActivity(
+                    activity.packageManager.getLaunchIntentForPackage(
+                        getPackage(
+                            activity,
+                            "Weather"
+                        )
+                    )
+                )
+            } catch (e: Exception) {
+                Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
+            }
         }
 
         override fun invoke(activity: Activity, args: List<String>) {
-
+        }
+        private fun getPackage(activity: Activity, name: String): String {
+            return activity.packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+                .associate {
+                    it.loadLabel(activity.packageManager).toString()
+                        .lowercase(Locale.ENGLISH) to it.packageName
+                }[name.lowercase(Locale.ENGLISH)]
+                ?: throw IllegalArgumentException("No package found for $name")
         }
     }
 
