@@ -34,7 +34,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                     invoke(activity)
                 }
                 else {
-                    val num = getContactList(activity)
+                    val num = getContactList(activity,args.first().value)
                     Log.d("NUMBER",num)
                     val intentDial = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$num"))
                     startActivity(intentDial)
@@ -43,7 +43,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         @SuppressLint("Range")
-        private fun getContactList(activity: Activity):String {
+        private fun getContactList(activity: Activity,nameResp: String):String {
             var numberContact = ""
             val cr: ContentResolver = activity.contentResolver
             val cur: Cursor? = cr.query(
@@ -61,12 +61,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                             ContactsContract.Contacts.DISPLAY_NAME
                         )
                     )
-                    if (cur.getInt(
-                            cur.getColumnIndex(
-                                ContactsContract.Contacts.HAS_PHONE_NUMBER
-                            )
-                        ) > 0
-                    ) {
+                    if ((cur.getInt(cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) && name == nameResp ) {
                         val pCur: Cursor? = cr.query(
                             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                             null,
@@ -90,6 +85,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                 }
             }
             cur?.close()
+
             return numberContact
         }
 
@@ -240,7 +236,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                             activity,
                             name
                         )
-                    )!!.setData(Uri.parse("https://www.google.com/#q=$searchString"))
+                    )!!.setData(Uri.parse("https://www.google.com/search?q=$searchString"))
                 )
             } catch (e: Exception) {
                 Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()

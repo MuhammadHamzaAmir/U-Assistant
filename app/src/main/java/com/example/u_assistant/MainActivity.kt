@@ -39,6 +39,7 @@ import com.example.u_assistant.models.Resource
 import com.example.u_assistant.models.getOrThrow
 import com.example.u_assistant.models.handle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.cloud.speech.v1.RecognitionAudio
 import com.google.cloud.speech.v1.RecognitionConfig
@@ -167,8 +168,9 @@ private fun MainScreen(
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val api = remember { Api() }
-        val microphonePermission = rememberPermissionState(
-            permission = android.Manifest.permission.RECORD_AUDIO
+        val microphonePermission = rememberMultiplePermissionsState(
+            permissions = listOf(android.Manifest.permission.RECORD_AUDIO,
+            android.Manifest.permission.WRITE_CONTACTS)
         )
 
         var currentText by remember { mutableStateOf("میں آپ کی کیسے مدد کر سکتا ہوں؟") }
@@ -182,7 +184,7 @@ private fun MainScreen(
 
 
 
-        if (microphonePermission.hasPermission) {
+        if (microphonePermission.allPermissionsGranted) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
@@ -280,7 +282,7 @@ private fun MainScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { microphonePermission.launchPermissionRequest() }) {
+                    Button(onClick = { microphonePermission.launchMultiplePermissionRequest() }) {
                         Text("Request permission")
                     }
                 }
