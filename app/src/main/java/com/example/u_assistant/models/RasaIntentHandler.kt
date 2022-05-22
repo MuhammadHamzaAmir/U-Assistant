@@ -79,9 +79,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
-            if (args.isEmpty()) {
                 invoke(activity)
-            }
         }
         private fun getPackage(activity: Activity, name: String): String {
             return activity.packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
