@@ -38,13 +38,13 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                 val intent = Intent(ContactsContract.Intents.Insert.ACTION)
                 intent.type = ContactsContract.RawContacts.CONTENT_TYPE;
                 var name = ""
-                if(args.size == 1){
-                    intent.putExtra(ContactsContract.Intents.Insert.NAME,args.first().value)
-                }else{
-                    for (value in args){
-                        name = name +" "+ value.value
+                if (args.size == 1) {
+                    intent.putExtra(ContactsContract.Intents.Insert.NAME, args.first().value)
+                } else {
+                    for (value in args) {
+                        name = name + " " + value.value
                     }
-                    intent.putExtra(ContactsContract.Intents.Insert.NAME,name)
+                    intent.putExtra(ContactsContract.Intents.Insert.NAME, name)
 
                 }
 
@@ -79,8 +79,9 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
-                invoke(activity)
+            invoke(activity)
         }
+
         private fun getPackage(activity: Activity, name: String): String {
             return activity.packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
                 .associate {
@@ -129,10 +130,9 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                 if (args.first().value in apps) {
                     apps[args.first().value]?.let { this(activity, it) }
                 }
-                if (args.isNotEmpty()){
-                    invoke(activity,"Google",args.first().value)
-                }
-                else {
+                if (args.isNotEmpty()) {
+                    invoke(activity, "Google", args.first().value)
+                } else {
                     invoke(activity)
                 }
             }
@@ -191,7 +191,42 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
-            invoke(activity)
+            if (args.isEmpty()) {
+                invoke(activity)
+            } else {
+                val apps = mapOf(
+                    "ایک" to 1,
+                    "اک" to 1,
+                    "دو" to 2,
+                    "ڈو" to 2,
+                    "تین" to 3,
+                    "ٹین" to 3,
+                    "چار" to 4,
+                    "چاڑ" to 4,
+                    "پانچ" to 5,
+                    "چ" to 6,
+                    "چھ" to 6,
+                    "چہ" to 6,
+                    "سات" to 7,
+                    "ساٹ" to 7,
+                    "اٹٹھ" to 8,
+                    "آٹھ" to 8,
+                    "نو" to 9,
+                    "نؤ" to 9,
+                    "دس" to 10,
+                    "ڈس" to 10,
+                    "دصص" to 10,
+                    "دص" to 10,
+                    "گیارہ" to 11,
+                    "گیارا" to 11,
+                    "گیاڑا" to 11,
+                    "گیاڑہ" to 11,
+                    "بارا" to 12,
+                    "بارہ" to 12,
+                    "باڑہ" to 12,
+                    "باڑا" to 12,
+                )
+            }
         }
     }
 
