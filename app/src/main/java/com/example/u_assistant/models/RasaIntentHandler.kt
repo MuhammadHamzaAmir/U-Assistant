@@ -189,6 +189,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                 "ایظی پیسہ" to "EasyPaisa",
                 "ٹک ٹاک" to "TikTok",
                 "اسنیپ چیٹ" to "SnapChat",
+                "سنیپ چیٹ" to "SnapChat",
                 "اسنیپچیٹ" to "SnapChat",
                 "گوگل" to "Google",
                 "لینکد ان" to "LinkedIn",
