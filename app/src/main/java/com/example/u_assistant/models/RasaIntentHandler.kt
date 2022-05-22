@@ -1,8 +1,10 @@
 package com.example.u_assistant.models
 
 import android.app.Activity
+import android.app.AlarmManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.provider.AlarmClock
 import android.provider.ContactsContract
 import android.widget.Toast
@@ -77,6 +79,9 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
+            if (args.isEmpty()) {
+                invoke(activity)
+            }
         }
         private fun getPackage(activity: Activity, name: String): String {
             return activity.packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
@@ -125,7 +130,11 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             } else {
                 if (args.first().value in apps) {
                     apps[args.first().value]?.let { this(activity, it) }
-                } else {
+                }
+                if (args.isNotEmpty()){
+                    invoke(activity,"Google",args.first().value)
+                }
+                else {
                     invoke(activity)
                 }
             }
@@ -142,6 +151,22 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                             name
                         )
                     )
+                )
+            } catch (e: Exception) {
+                Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        private operator fun invoke(activity: Activity, name: String, searchString: String) {
+
+            try {
+                activity.startActivity(
+                    activity.packageManager.getLaunchIntentForPackage(
+                        getPackage(
+                            activity,
+                            name
+                        )
+                    )!!.setData(Uri.parse("https://www.google.com/#q=$searchString"))
                 )
             } catch (e: Exception) {
                 Toast.makeText(activity, e.message, Toast.LENGTH_SHORT).show()
@@ -168,7 +193,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
-
+            invoke(activity)
         }
     }
 
