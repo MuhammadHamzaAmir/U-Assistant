@@ -1,5 +1,6 @@
 package com.example.u_assistant
 
+import android.util.Log
 import com.example.u_assistant.models.RasaModel
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -25,6 +26,7 @@ class Api {
     }
 
     suspend fun getModel(text: String): RasaModel {
+        Log.d("API",text)
         return ktor.post(RASA_URL) { setBody(json.encodeToString(RasaRequest(text))) }.body()
     }
 

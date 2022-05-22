@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ExperimentalGraphicsApi
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -156,7 +157,7 @@ private fun MainScreenPreview() {
     MainScreen(onStartRecord = {}, onStopRecord = { "" })
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalGraphicsApi::class)
 @Composable
 private fun MainScreen(
     onStartRecord: suspend () -> Unit,
@@ -170,30 +171,38 @@ private fun MainScreen(
             permission = android.Manifest.permission.RECORD_AUDIO
         )
 
-        var currentText by remember { mutableStateOf("") }
+        var currentText by remember { mutableStateOf("میں آپ کی کیسے مدد کر سکتا ہوں؟") }
         var isRecording by remember { mutableStateOf(false) }
         var isLoading by remember { mutableStateOf(false) }
 
         val microphoneBgColor by animateColorAsState(targetValue = if (isRecording) Color.Red else Color.White)
-        val microphoneColor by animateColorAsState(targetValue = if (isRecording) Color.White else Color.Black)
+        val microphoneColor by animateColorAsState(targetValue = if (isRecording) Color.White else Color.hsl(250F,0.5F,0.4F))
+        val screenBgColor by animateColorAsState(targetValue = if (isRecording) Color.White else  Color.hsl(250F,0.5F,0.4F))
+
+
+
 
         if (microphonePermission.hasPermission) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(color = Color.Black)
+                        .background(color = screenBgColor)
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                )
+                {
+                    Spacer(modifier = Modifier.padding(top=140.dp))
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),
                         text = currentText,
-                        color = Color.White,
-                        style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
+                        color = if (isRecording) Color.Black else Color.White,
+                        style = MaterialTheme.typography.h5.copy(textDirection = TextDirection.Rtl),
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.padding(top=30.dp))
                     Image(
                         modifier = Modifier
                             .size(150.dp)
@@ -227,7 +236,7 @@ private fun MainScreen(
                         contentDescription = "Mic",
                         colorFilter = ColorFilter.tint(microphoneColor)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(25.dp))
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         text = "بٹن دبانے کے بعد بولین",
@@ -235,7 +244,7 @@ private fun MainScreen(
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.h6.copy(textDirection = TextDirection.Rtl)
                     )
-                    Spacer(modifier = Modifier.height(30.dp))
+                    Spacer(modifier = Modifier.height(95.dp))
                 }
 
                 if (isLoading) {
