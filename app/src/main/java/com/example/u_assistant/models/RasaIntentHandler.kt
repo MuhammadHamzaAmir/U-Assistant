@@ -171,6 +171,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
             val apps = mapOf(
                 "یوٹیوب" to "YouTube",
+                "یو ٹیوب" to "YouTube",
                 "اوبر" to "uber",
                 "کروم" to "Chrome",
                 "پلےاسٹور" to "Play Store",
@@ -184,7 +185,11 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                 "فیسبک" to "Facebook",
                 "فیس بک" to "Facebook",
                 "واٹسایپ" to "WhatsApp",
+                "واٹس ایپ" to "WhatsApp",
+                "واٹس اپ" to "WhatsApp",
+                "واٹساپ" to "WhatsApp",
                 "فوڈپانڈا" to "FoodPanda",
+                "فوڈ پانڈا" to "FoodPanda",
                 "چیتے" to "Cheetay",
                 "ایظی پیسہ" to "EasyPaisa",
                 "ٹک ٹاک" to "TikTok",
