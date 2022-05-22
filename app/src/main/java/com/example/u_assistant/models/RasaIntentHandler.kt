@@ -1,18 +1,26 @@
 package com.example.u_assistant.models
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Application
+import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.net.Uri
 import android.provider.AlarmClock
 import android.provider.ContactsContract
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import java.util.*
 
 
 sealed class RasaIntentHandler(val intent: RasaIntent) {
+
     class PhoneCall(intent: RasaIntent) : RasaIntentHandler(intent) {
+
         override fun invoke(activity: Activity) {
             with(activity) {
                 val intent = Intent(Intent.ACTION_DIAL)
@@ -21,9 +29,74 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
-            if (args.isEmpty()) invoke(activity)
+            with(activity){
+                if (args.isEmpty()){
+                    invoke(activity)
+                }
+                else {
+                    val num = getContactList(activity)
+                    Log.d("NUMBER",num)
+                    val intentDial = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$num"))
+                    startActivity(intentDial)
+                }
+            }
         }
+
+        @SuppressLint("Range")
+        private fun getContactList(activity: Activity):String {
+            var numberContact = ""
+            val cr: ContentResolver = activity.contentResolver
+            val cur: Cursor? = cr.query(
+                ContactsContract.Contacts.CONTENT_URI,
+                null, null, null, null
+            )
+
+            if ((if (cur != null) cur.count else 0) > 0) {
+                while (cur != null && cur.moveToNext()) {
+                    val id: String = cur.getString(
+                        cur.getColumnIndex(ContactsContract.Contacts._ID)
+                    )
+                    val name: String = cur.getString(
+                        cur.getColumnIndex(
+                            ContactsContract.Contacts.DISPLAY_NAME
+                        )
+                    )
+                    if (cur.getInt(
+                            cur.getColumnIndex(
+                                ContactsContract.Contacts.HAS_PHONE_NUMBER
+                            )
+                        ) > 0
+                    ) {
+                        val pCur: Cursor? = cr.query(
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                            arrayOf(id),
+                            null
+                        )
+                        if (pCur != null) {
+                            while (pCur.moveToNext()) {
+                                val phoneNo: String = pCur.getString(
+                                    pCur.getColumnIndex(
+                                        ContactsContract.CommonDataKinds.Phone.NUMBER
+                                    )
+                                )
+                                if (phoneNo.isNotEmpty()){
+                                numberContact = phoneNo}
+                            }
+                        }
+
+                    }
+                }
+            }
+            cur?.close()
+            return numberContact
+        }
+
     }
+
+
+
 
     class AddContact(intent: RasaIntent) : RasaIntentHandler(intent) {
         override fun invoke(activity: Activity) {
@@ -35,6 +108,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
+
             with(activity) {
                 val intent = Intent(ContactsContract.Intents.Insert.ACTION)
                 intent.type = ContactsContract.RawContacts.CONTENT_TYPE;
@@ -156,6 +230,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             }
         }
 
+
         private operator fun invoke(activity: Activity, name: String, searchString: String) {
 
             try {
@@ -192,6 +267,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
         }
 
         override fun invoke(activity: Activity, args: List<RasaEntity>) {
+
             if (args.isEmpty()) {
                 invoke(activity)
             } else {
