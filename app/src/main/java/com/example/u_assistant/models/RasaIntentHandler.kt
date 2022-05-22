@@ -1,14 +1,15 @@
 package com.example.u_assistant.models
 
 import android.app.Activity
-import android.app.AlarmManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.AlarmClock
 import android.provider.ContactsContract
 import android.widget.Toast
+import androidx.core.content.ContextCompat.startActivity
 import java.util.*
+
 
 sealed class RasaIntentHandler(val intent: RasaIntent) {
     class PhoneCall(intent: RasaIntent) : RasaIntentHandler(intent) {
@@ -194,7 +195,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
             if (args.isEmpty()) {
                 invoke(activity)
             } else {
-                val apps = mapOf(
+                val numbersInUrdu = mapOf(
                     "ایک" to 1,
                     "اک" to 1,
                     "دو" to 2,
@@ -226,6 +227,23 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                     "باڑہ" to 12,
                     "باڑا" to 12,
                 )
+                val alarmTime = listOf("شام","رات","دوپہر","صبح")
+
+                if (args.first().value in numbersInUrdu && args.first().entity == "alarm_time_4" ) {
+                    var hourSet = 0
+
+                    hourSet = numbersInUrdu[args.first().value]!!
+
+                    with(activity) {
+                        val i = Intent(AlarmClock.ACTION_SET_ALARM)
+                        i.putExtra(AlarmClock.EXTRA_HOUR, hourSet)
+                        i.putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                        i.putExtra(AlarmClock.EXTRA_MESSAGE,"الارم یو اسسٹنٹ کے ذریعہ سیٹ کیا گیا ہے۔")
+                        startActivity(i)
+                    }
+                } else {
+                    invoke(activity)
+                }
             }
         }
     }
