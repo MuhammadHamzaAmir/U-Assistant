@@ -33,16 +33,17 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                     invoke(activity)
                 }
                 else {
-                    getContactList(activity)
-                    val intentDial = Intent(Intent.ACTION_DIAL, Uri.parse("name:" + "args.first().value"))
+                    val num = getContactList(activity)
+                    Log.d("NUMBER",num)
+                    val intentDial = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$num"))
                     startActivity(intentDial)
                 }
             }
         }
 
         @SuppressLint("Range")
-        private fun getContactList(activity: Activity) {
-
+        private fun getContactList(activity: Activity):String {
+            var numberContact = ""
             val cr: ContentResolver = activity.contentResolver
             val cur: Cursor? = cr.query(
                 ContactsContract.Contacts.CONTENT_URI,
@@ -79,6 +80,8 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                                         ContactsContract.CommonDataKinds.Phone.NUMBER
                                     )
                                 )
+                                if (phoneNo.isNotEmpty()){
+                                numberContact = phoneNo}
                             }
                         }
 
@@ -86,7 +89,7 @@ sealed class RasaIntentHandler(val intent: RasaIntent) {
                 }
             }
             cur?.close()
-            return nameContact
+            return numberContact
         }
 
     }
