@@ -11,7 +11,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private const val RASA_URL: String = "https://241a-111-68-97-201.ngrok.io/model/parse"
+private const val RASA_URL: String = "https://e242-111-68-97-201.ngrok.io/model/parse"
 
 class Api {
 
